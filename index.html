@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Worker Issue Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .file-upload-wrapper { border: 2px dashed #cbd5e1; transition: all 0.3s ease; }
+        .file-upload-wrapper.active { border-color: #3b82f6; background-color: #eff6ff; }
+        
+        .loader {
+            border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #3b82f6;
+            width: 24px; height: 24px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
+
+    <div class="w-full max-w-lg glass-panel rounded-2xl overflow-hidden fade-in shadow-2xl">
+        
+        <!-- Header -->
+        <div class="bg-slate-900 text-white p-6 relative">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <i class="fa-solid fa-helmet-safety text-6xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">Report Issue</h1>
+            <p class="text-slate-400 text-sm mt-1">Submit complaint & get instant receipt.</p>
+        </div>
+
+        <!-- Loading Overlay for Dropdowns -->
+        <div id="initLoader" class="hidden absolute inset-0 bg-white/80 z-50 flex items-center justify-center flex-col">
+            <div class="loader mb-2"></div>
+            <p class="text-sm text-slate-500">Loading options...</p>
+        </div>
+
+        <!-- Form -->
+        <form id="reportForm" class="p-6 space-y-4">
+            
+            <!-- Row 1: Gate Pass & Name -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Gate Pass No.</label>
+                    <input type="text" id="gatePass" placeholder="e.g. GP-9901" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Worker Name</label>
+                    <input type="text" id="name" placeholder="Full Name" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 transition-all">
+                </div>
+            </div>
+
+            <!-- Row 2: Mobile -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600 uppercase">Mobile Number</label>
+                <input type="tel" id="mobile" placeholder="Your Contact No." class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 transition-all">
+            </div>
+
+            <!-- Row 3: Area & Job Type (Dynamic) -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Area / Plant</label>
+                    <div class="relative">
+                        <select id="area" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 appearance-none bg-white">
+                            <option value="">Loading...</option>
+                        </select>
+                        <div class="absolute right-3 top-3.5 text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down"></i></div>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600 uppercase">Job Type</label>
+                    <div class="relative">
+                        <select id="jobType" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 appearance-none bg-white">
+                            <option value="">Loading...</option>
+                        </select>
+                        <div class="absolute right-3 top-3.5 text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Category (Dynamic) -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600 uppercase">Category</label>
+                <div class="relative">
+                    <select id="category" class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 appearance-none bg-white">
+                        <option value="">Loading...</option>
+                    </select>
+                    <div class="absolute right-4 top-3.5 text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down"></i></div>
+                </div>
+            </div>
+
+            <!-- Row 5: Complaint -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600 uppercase">Complaint Description</label>
+                <textarea id="description" rows="3" placeholder="Describe the issue..." class="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 outline-none focus:border-blue-500 resize-none"></textarea>
+            </div>
+
+            <!-- Row 6: Evidence -->
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-600 uppercase">Evidence Photo</label>
+                <div class="file-upload-wrapper rounded-lg p-6 text-center cursor-pointer relative" id="dropZone">
+                    <input type="file" id="photo" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div id="uploadPlaceholder">
+                        <i class="fa-solid fa-camera text-2xl text-slate-300 mb-2"></i>
+                        <p class="text-sm text-slate-500">Tap to upload photo</p>
+                    </div>
+                    <div id="previewContainer" class="hidden flex-col items-center">
+                        <img id="imagePreview" class="h-20 rounded-lg shadow-sm object-cover mb-2" src="" alt="Preview">
+                        <button type="button" id="removeBtn" class="text-xs text-red-500 font-bold z-20 relative">REMOVE</button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all">
+                <span>Submit Report</span> <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+
+        <!-- Success Screen -->
+        <div id="successMessage" class="hidden p-6 bg-white h-full flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-3">
+                <i class="fa-solid fa-check text-green-600"></i>
+            </div>
+            <h2 class="text-xl font-bold text-slate-800 mb-1">Success!</h2>
+            <p class="text-slate-500 text-sm mb-4">Downloading receipt...</p>
+            
+            <div class="mb-4 shadow-lg border border-slate-200 rounded-lg overflow-hidden w-full max-w-xs">
+                 <img id="generatedReceipt" class="w-full h-auto block" alt="Complaint Receipt">
+            </div>
+
+            <a id="downloadLink" href="#" download="Complaint-Receipt.jpg" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow mb-3 block">
+                Download Again <i class="fa-solid fa-download ml-2"></i>
+            </a>
+            
+            <button onclick="location.reload()" class="text-slate-500 text-sm font-semibold hover:text-slate-700">New Complaint</button>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="receiptCanvas" width="600" height="900" style="display:none;"></canvas>
+
+    <script>
+        // ============================================
+        // 🚀 PASTE YOUR APP SCRIPT URL HERE
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-aCqolBYp4-dsRshFmIJ2KIQgaotBgeXI2FBUmmRYDdcTCRnioxc5PdNY-K3Zcobu/exec"; 
+        // ============================================
+
+        const form = document.getElementById('reportForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const photoInput = document.getElementById('photo');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        let base64Image = "";
+        let fileName = "";
+
+        // 1. Initialize & Fetch Dropdowns
+        window.onload = function() {
+            if (!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
+            
+            const loader = document.getElementById('initLoader');
+            // Show loader if desired, but we can do background fetch
+            
+            fetch(WEB_APP_URL) // Simple GET request
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    populateSelect('area', data.areas, "Select Area");
+                    populateSelect('jobType', data.jobs, "Select Job Type");
+                    populateSelect('category', data.categories, "Select Category");
+                }
+            })
+            .catch(err => console.error("Dropdown fetch error:", err));
+        };
+
+        function populateSelect(id, items, placeholder) {
+            const select = document.getElementById(id);
+            select.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.innerText = item;
+                select.appendChild(opt);
+            });
+        }
+
+        // 2. File Handling
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if(file.size > 5 * 1024 * 1024) { alert("Image too large (Max 5MB)"); return; }
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    base64Image = event.target.result;
+                    fileName = file.name;
+                    imagePreview.src = base64Image;
+                    document.getElementById('uploadPlaceholder').classList.add('hidden');
+                    previewContainer.classList.remove('hidden');
+                    previewContainer.classList.add('flex');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('removeBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            photoInput.value = ""; base64Image = "";
+            document.getElementById('uploadPlaceholder').classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            previewContainer.classList.remove('flex');
+        });
+
+        // 3. Submit Logic
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) { alert("Please configure the Web App URL."); return; }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="loader"></div>';
+            
+            const formData = {
+                gatePass: document.getElementById('gatePass').value,
+                name: document.getElementById('name').value,
+                mobile: document.getElementById('mobile').value,
+                area: document.getElementById('area').value,
+                jobType: document.getElementById('jobType').value,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value,
+                photoData: base64Image,
+                photoName: fileName
+            };
+
+            fetch(WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify(formData)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    // Pass returned Follow Up details to Receipt Generator
+                    generateReceipt(data.refId, formData, data.followUpName, data.followUpMobile);
+                    
+                    form.classList.add('hidden');
+                    document.querySelector('.bg-slate-900').classList.add('hidden');
+                    document.getElementById('successMessage').classList.remove('hidden');
+                } else { throw new Error(data.error); }
+            })
+            .catch(err => {
+                alert("Error: " + err.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit Report <i class="fa-solid fa-paper-plane"></i>';
+            });
+        });
+
+        // 4. RECEIPT GENERATOR (With Follow Up Person)
+        function generateReceipt(refId, formData, followUpName, followUpMobile) {
+            const canvas = document.getElementById('receiptCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, 600, 900);
+            
+            // Header
+            ctx.fillStyle = "#0f172a";
+            ctx.fillRect(0, 0, 600, 100);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 28px Arial";
+            ctx.fillText("COMPLAINT RECEIPT", 30, 60);
+            
+            // TICKET & DATE
+            ctx.fillStyle = "#333333";
+            ctx.font = "bold 18px Arial";
+            ctx.fillText("TICKET NO:", 30, 140); 
+            ctx.font = "18px Arial";
+            ctx.fillText(refId, 160, 140);
+            
+            ctx.fillText("DATE:", 350, 140); 
+            ctx.fillText(new Date().toLocaleDateString(), 420, 140);
+
+            // WORKER DETAILS SECTION
+            ctx.fillStyle = "#f1f5f9"; // Header bg
+            ctx.fillRect(30, 170, 540, 30);
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("WORKER DETAILS", 40, 190);
+
+            let y = 230;
+            const drawRow = (label, value) => {
+                ctx.fillStyle = "#64748b"; // label color
+                ctx.font = "bold 16px Arial";
+                ctx.fillText(label, 30, y);
+                ctx.fillStyle = "#000000"; // value color
+                ctx.font = "16px Arial";
+                ctx.fillText(value || "-", 200, y);
+                y += 35;
+            };
+
+            drawRow("Gate Pass No:", formData.gatePass);
+            drawRow("Name:", formData.name);
+            drawRow("Mobile:", formData.mobile);
+            drawRow("Area:", formData.area);
+            drawRow("Job Type:", formData.jobType);
+            drawRow("Category:", formData.category);
+
+            // COMPLAINT SECTION
+            y += 10;
+            ctx.fillStyle = "#f1f5f9";
+            ctx.fillRect(30, y, 540, 30);
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("COMPLAINT", 40, y + 20);
+            y += 50;
+            
+            ctx.fillStyle = "#000000";
+            ctx.font = "16px Arial";
+            wrapText(ctx, formData.description || "No description", 30, y, 540, 24);
+            y += 80;
+
+            // EVIDENCE SECTION (if space permits or fixed)
+            // Let's put Follow Up details FIRST as they are critical
+            ctx.fillStyle = "#f1f5f9";
+            ctx.fillRect(30, y, 540, 30);
+            ctx.fillStyle = "#0f172a";
+            ctx.font = "bold 14px Arial";
+            ctx.fillText("ASSIGNED TO (FOLLOW UP)", 40, y + 20);
+            y += 40;
+
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 18px Arial";
+            ctx.fillText(followUpName, 30, y);
+            y += 25;
+            ctx.font = "18px Arial";
+            ctx.fillStyle = "#dc2626"; // Red for contact
+            ctx.fillText("Mobile: " + followUpMobile, 30, y);
+            y += 50;
+
+            // PHOTO
+            if (formData.photoData) {
+                const img = new Image();
+                img.onload = function() {
+                    const scale = Math.min(540 / img.width, 200 / img.height);
+                    ctx.drawImage(img, 30, y, img.width * scale, img.height * scale);
+                    finalizeReceipt();
+                };
+                img.src = formData.photoData;
+            } else {
+                finalizeReceipt();
+            }
+        }
+
+        function finalizeReceipt() {
+            const canvas = document.getElementById('receiptCanvas');
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('generatedReceipt').src = dataUrl;
+            const link = document.getElementById('downloadLink');
+            link.href = dataUrl;
+            setTimeout(() => link.click(), 500);
+        }
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let lineCount = 0;
+            for(let n = 0; n < words.length; n++) {
+                if (lineCount >= 3) { line += "..."; break; }
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                    lineCount++;
+                } else { line = testLine; }
+            }
+            context.fillText(line, x, y);
+        }
+    </script>
+</body>
+</html>
