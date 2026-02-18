@@ -89,20 +89,19 @@
 
         <!-- VIEW 3: STAFF LOGIN -->
         <div id="view-staff" class="hidden p-6 space-y-4 tab-content">
-            <div id="staffLoginForm" class="space-y-4">
+            <div id="staffLoginForm" class="space-y-4 mt-8">
+                <!-- Clean Login Interface: Only Passcode Input -->
                 <div class="text-center mb-6">
-                    <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-2"><i class="fa-solid fa-key text-slate-400"></i></div>
-                    <h3 class="font-bold text-slate-800">Staff Access</h3>
-                    <p class="text-xs text-slate-500">Enter your registered mobile number</p>
+                     <h3 class="font-bold text-slate-800 text-lg">Staff Login</h3>
                 </div>
-                <input type="tel" id="staffMobile" placeholder="Mobile Number" class="w-full p-3 bg-slate-50 border rounded-lg text-center font-bold tracking-widest outline-blue-500">
+                <input type="password" id="staffPasscode" placeholder="Enter Passcode" class="w-full p-3 bg-slate-50 border rounded-lg text-center font-bold tracking-widest outline-blue-500 text-xl">
                 <button onclick="staffLogin()" id="staffLoginBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700">Login</button>
             </div>
 
             <div id="staffDashboard" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
                     <h3 class="font-bold text-slate-800">Assigned Tickets</h3>
-                    <button onclick="location.reload()" class="text-xs text-red-500">Logout</button>
+                    <button onclick="location.reload()" class="text-xs text-red-500 font-bold">LOGOUT</button>
                 </div>
                 <div id="staffTicketList" class="space-y-3 overflow-y-auto max-h-[400px]">
                     <!-- Tickets injected here -->
@@ -239,23 +238,24 @@
 
         // --- LOGIC 4: STAFF LOGIN & UPDATE ---
         function staffLogin() {
-            const mob = document.getElementById('staffMobile').value;
-            if(!mob) return alert("Enter Mobile");
+            const pass = document.getElementById('staffPasscode').value;
+            if(!pass) return alert("Enter Passcode");
             const btn = document.getElementById('staffLoginBtn');
             btn.innerText = "Verifying...";
             
-            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'staffLogin', mobile: mob }) })
+            // Send passcode instead of mobile
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'staffLogin', passcode: pass }) })
             .then(r=>r.json()).then(res => {
                 btn.innerText = "Login";
                 if(res.result==='success') {
                     document.getElementById('staffLoginForm').classList.add('hidden');
                     document.getElementById('staffDashboard').classList.remove('hidden');
-                    renderStaffTickets(res.tickets, mob);
+                    renderStaffTickets(res.tickets);
                 } else { alert(res.error); }
             });
         }
 
-        function renderStaffTickets(tickets, staffMob) {
+        function renderStaffTickets(tickets) {
             const list = document.getElementById('staffTicketList');
             list.innerHTML = "";
             if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>No assigned tickets.</p>"; return; }
@@ -277,13 +277,13 @@
                                 <option value="IN PROGRESS" ${t.status==='IN PROGRESS'?'selected':''}>IN PROGRESS</option>
                                 <option value="RESOLVED" ${t.status==='RESOLVED'?'selected':''}>RESOLVED</option>
                             </select>
-                            <button onclick="updateStatus(${t.rowIndex}, '${staffMob}')" class="bg-slate-800 text-white px-3 py-1 text-xs rounded">Update</button>
+                            <button onclick="updateStatus(${t.rowIndex})" class="bg-slate-800 text-white px-3 py-1 text-xs rounded">Update</button>
                         </div>
                     </div>`;
             });
         }
 
-        function updateStatus(rowIndex, mob) {
+        function updateStatus(rowIndex) {
             const newStat = document.getElementById(`status-${rowIndex}`).value;
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'updateStatus', rowIndex: rowIndex, newStatus: newStat }) })
             .then(r=>r.json()).then(res => {
@@ -292,7 +292,7 @@
             });
         }
 
-        // --- RECEIPT GENERATION (Unchanged from V3 mostly) ---
+        // --- RECEIPT GENERATION ---
         function generateReceipt(refId, formData, fName, fMobile) {
             const canvas = document.getElementById('receiptCanvas');
             const ctx = canvas.getContext('2d');
