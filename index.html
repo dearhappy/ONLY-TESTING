@@ -14,6 +14,8 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .tab-btn.active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: 600; }
         .tab-btn { color: #64748b; font-weight: 500; transition: all 0.2s; }
+        .recording-pulse { animation: pulse-red 1.5s infinite; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="min-h-screen p-4 bg-slate-100 flex flex-col items-center">
@@ -34,25 +36,66 @@
 
         <!-- VIEW 1: REPORT FORM -->
         <div id="view-report" class="p-6 space-y-4 tab-content">
+            <!-- Loader Overlay -->
+            <div id="initLoader" class="absolute inset-0 bg-white/90 z-20 flex items-center justify-center flex-col">
+                <div class="loader mb-2"></div><p class="text-xs text-slate-500">Loading Employee Data...</p>
+            </div>
+
             <form id="reportForm" class="space-y-4">
+                <!-- Row 1: Emp Code & Name -->
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="gatePass" placeholder="Gate Pass No" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
-                    <input type="text" id="name" placeholder="Worker Name" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                    <div class="relative">
+                        <input type="text" id="empCode" placeholder="Enter Emp Code" class="p-3 bg-white border-2 border-blue-100 rounded-lg text-sm w-full outline-blue-500 font-bold" onblur="lookupEmp()">
+                        <div id="empCheck" class="absolute right-3 top-3.5 hidden"><i class="fa-solid fa-check-circle text-green-500"></i></div>
+                    </div>
+                    <input type="text" id="name" placeholder="Name (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
                 </div>
+
+                <!-- Row 2: Oracle & Designation -->
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="oracleId" placeholder="Oracle ID (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                    <input type="text" id="designation" placeholder="Designation (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                </div>
+                
                 <input type="tel" id="mobile" placeholder="Your Mobile Number" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="area" placeholder="Area / Plant" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
-                    <input type="text" id="jobType" placeholder="Job Type" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
-                </div>
-                <input type="text" id="category" placeholder="Category" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                <select id="category" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                    <option value="">Select Category...</option>
+                    <option value="Safety">Safety</option>
+                    <option value="Payroll">Payroll</option>
+                    <option value="Facility">Facility</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Other">Other</option>
+                </select>
 
-                <textarea id="description" rows="3" placeholder="Complaint Details..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
+                <!-- Complaint Details: Text OR Voice -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Complaint Details</label>
+                    
+                    <textarea id="description" rows="2" placeholder="Type here..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
+                    
+                    <div class="flex items-center gap-2">
+                        <div class="h-px bg-slate-200 flex-1"></div>
+                        <span class="text-xs text-slate-400">OR RECORD VOICE</span>
+                        <div class="h-px bg-slate-200 flex-1"></div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="recordBtn" onclick="toggleRecording()" class="flex-1 bg-red-50 text-red-600 border border-red-100 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all">
+                            <i class="fa-solid fa-microphone"></i> <span id="recordText">Record</span>
+                        </button>
+                        <div id="audioPreview" class="hidden flex-1 flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
+                            <i class="fa-solid fa-file-audio text-green-600"></i>
+                            <span class="text-xs text-green-700 font-medium">Audio Saved</span>
+                            <button type="button" onclick="resetAudio()" class="ml-auto text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('photo').click()">
                     <input type="file" id="photo" class="hidden" accept="image/*">
                     <i class="fa-solid fa-camera text-slate-400"></i>
-                    <span id="photoLabel" class="text-xs text-slate-500 ml-2">Attach Photo</span>
+                    <span id="photoLabel" class="text-xs text-slate-500 ml-2">Attach Photo (Optional)</span>
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex justify-center items-center gap-2">
@@ -64,9 +107,9 @@
         <!-- VIEW 2: TRACK STATUS -->
         <div id="view-track" class="hidden p-6 space-y-4 tab-content">
             <div class="space-y-2">
-                <label class="text-sm font-bold text-slate-700">Track by Gate Pass or Mobile</label>
+                <label class="text-sm font-bold text-slate-700">Track by EmpCode or Mobile</label>
                 <div class="flex gap-2">
-                    <input type="text" id="trackInput" placeholder="Enter Gate Pass or Mobile" class="flex-1 p-3 bg-slate-50 border rounded-lg text-sm outline-blue-500">
+                    <input type="text" id="trackInput" placeholder="Enter EmpCode or Mobile" class="flex-1 p-3 bg-slate-50 border rounded-lg text-sm outline-blue-500">
                     <button onclick="trackStatus()" class="bg-blue-600 text-white px-4 rounded-lg"><i class="fa-solid fa-search"></i></button>
                 </div>
             </div>
@@ -87,7 +130,7 @@
 
             <div id="staffDashboard" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="font-bold text-slate-800">All Complaints</h3>
+                    <h3 class="font-bold text-slate-800">Manage Complaints</h3>
                     <button onclick="location.reload()" class="text-xs text-red-500 font-bold">LOGOUT</button>
                 </div>
                 <div id="staffTicketList" class="space-y-3 overflow-y-auto max-h-[400px]">
@@ -113,8 +156,26 @@
         // 🚀 PASTE YOUR APP SCRIPT URL HERE
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-aCqolBYp4-dsRshFmIJ2KIQgaotBgeXI2FBUmmRYDdcTCRnioxc5PdNY-K3Zcobu/exec"; 
         
+        let empList = [];
+        let globalStaffList = [];
         let base64Image = "", fileName = "";
-        let globalStaffList = []; // Stores Responsible Persons list
+        
+        // Audio Vars
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBase64 = "";
+        let isRecording = false;
+
+        // --- INIT ---
+        window.onload = function() {
+            if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
+            fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
+                document.getElementById('initLoader').classList.add('hidden');
+                if(data.status==='success') {
+                    empList = data.empList;
+                }
+            });
+        };
 
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -123,7 +184,64 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- SUBMIT COMPLAINT ---
+        // --- LOGIC 1: AUTO FILL ---
+        function lookupEmp() {
+            const code = document.getElementById('empCode').value.trim();
+            const match = empList.find(e => e.code.toLowerCase() === code.toLowerCase());
+            
+            if(match) {
+                document.getElementById('name').value = match.name;
+                document.getElementById('oracleId').value = match.oracle;
+                document.getElementById('designation').value = match.designation;
+                document.getElementById('empCheck').classList.remove('hidden');
+            } else {
+                document.getElementById('name').value = "";
+                document.getElementById('oracleId').value = "";
+                document.getElementById('designation').value = "";
+                document.getElementById('empCheck').classList.add('hidden');
+            }
+        }
+
+        // --- LOGIC 2: AUDIO RECORDING ---
+        async function toggleRecording() {
+            if(!isRecording) {
+                // Start
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                    mediaRecorder.onstop = () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.readAsDataURL(audioBlob);
+                        reader.onloadend = () => {
+                            audioBase64 = reader.result;
+                            document.getElementById('audioPreview').classList.remove('hidden');
+                            document.getElementById('audioPreview').classList.add('flex');
+                        };
+                    };
+                    mediaRecorder.start();
+                    isRecording = true;
+                    document.getElementById('recordBtn').classList.add('recording-pulse', 'bg-red-500', 'text-white');
+                    document.getElementById('recordText').innerText = "Stop";
+                } catch(err) { alert("Microphone access needed."); }
+            } else {
+                // Stop
+                mediaRecorder.stop();
+                isRecording = false;
+                document.getElementById('recordBtn').classList.remove('recording-pulse', 'bg-red-500', 'text-white');
+                document.getElementById('recordText').innerText = "Record";
+            }
+        }
+        
+        function resetAudio() {
+            audioBase64 = "";
+            document.getElementById('audioPreview').classList.add('hidden');
+            document.getElementById('audioPreview').classList.remove('flex');
+        }
+
+        // --- LOGIC 3: SUBMIT ---
         document.getElementById('photo').addEventListener('change', function(e) {
             let file = e.target.files[0];
             if(file) {
@@ -135,18 +253,25 @@
 
         document.getElementById('reportForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Check if user has audio OR text
+            if(!document.getElementById('description').value && !audioBase64) {
+                alert("Please provide text details OR record a voice note."); return;
+            }
+
             const btn = document.getElementById('submitBtn');
             btn.innerText = "Processing..."; btn.disabled = true;
 
             const data = {
                 action: 'submit',
-                gatePass: document.getElementById('gatePass').value,
+                empCode: document.getElementById('empCode').value,
                 name: document.getElementById('name').value,
+                oracleId: document.getElementById('oracleId').value,
+                designation: document.getElementById('designation').value,
                 mobile: document.getElementById('mobile').value,
-                area: document.getElementById('area').value,
-                jobType: document.getElementById('jobType').value,
                 category: document.getElementById('category').value,
                 description: document.getElementById('description').value,
+                audioData: audioBase64,
                 photoData: base64Image, photoName: fileName
             };
 
@@ -162,7 +287,7 @@
         // --- TRACK STATUS ---
         function trackStatus() {
             const q = document.getElementById('trackInput').value;
-            if(!q) return alert("Enter Gate Pass or Mobile");
+            if(!q) return alert("Enter EmpCode or Mobile");
             const con = document.getElementById('trackResults');
             con.innerHTML = '<div class="loader mx-auto"></div>';
 
@@ -194,11 +319,11 @@
             .then(r=>r.json()).then(res => {
                 btn.innerText = "Login";
                 if(res.result==='success') {
-                    globalStaffList = res.staffList; // Save staff list for dropdowns
+                    globalStaffList = res.staffList;
                     document.getElementById('staffLoginForm').classList.add('hidden');
                     document.getElementById('staffDashboard').classList.remove('hidden');
                     renderAdminTickets(res.tickets);
-                } else { alert(res.error); }
+                } else { alert(res.error); btn.innerText="Login"; }
             });
         }
 
@@ -208,7 +333,6 @@
             if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>No complaints.</p>"; return; }
 
             tickets.forEach(t => {
-                // Create Staff Options HTML
                 let staffOptions = `<option value="Pending Assignment">Unassigned</option>`;
                 globalStaffList.forEach(s => {
                     staffOptions += `<option value="${s.name}" ${t.assignedTo === s.name ? 'selected' : ''}>${s.name}</option>`;
@@ -219,14 +343,17 @@
                         <div class="flex justify-between items-start">
                             <div>
                                 <span class="px-2 py-0.5 rounded text-xs font-bold ${t.status==='OPEN'?'bg-red-100 text-red-600':'bg-green-100 text-green-600'}">${t.status}</span>
-                                <h4 class="font-bold text-sm mt-1">${t.worker} (${t.area})</h4>
-                                <p class="text-xs text-slate-600 mb-2">${t.complaint}</p>
+                                <h4 class="font-bold text-sm mt-1">${t.worker} (${t.empCode})</h4>
+                                <p class="text-xs text-slate-600 mb-2">${t.designation} | ${t.category}</p>
+                                <p class="text-sm text-slate-800 italic">"${t.complaint}"</p>
                             </div>
-                            ${t.photo !== 'No Photo' ? `<a href="${t.photo}" target="_blank"><i class="fa-solid fa-image text-blue-500"></i></a>` : ''}
+                            <div class="flex flex-col gap-2">
+                                ${t.photo !== 'No Photo' ? `<a href="${t.photo}" target="_blank"><i class="fa-solid fa-image text-blue-500"></i></a>` : ''}
+                                ${t.audio !== 'No Audio' ? `<a href="${t.audio}" target="_blank"><i class="fa-solid fa-microphone text-red-500"></i></a>` : ''}
+                            </div>
                         </div>
                         
                         <div class="space-y-2 mt-2 pt-2 border-t">
-                             <!-- ASSIGN DROPDOWN -->
                              <div>
                                 <label class="text-xs font-bold text-slate-400 uppercase">Assign To</label>
                                 <select id="assign-${t.rowIndex}" class="bg-blue-50 border border-blue-200 p-1 text-xs rounded w-full font-bold text-blue-900">
@@ -234,7 +361,6 @@
                                 </select>
                              </div>
 
-                             <!-- STATUS DROPDOWN & UPDATE -->
                              <div class="flex gap-2">
                                 <select id="status-${t.rowIndex}" class="bg-slate-50 border p-1 text-xs rounded w-full">
                                     <option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option>
@@ -254,12 +380,7 @@
             
             fetch(WEB_APP_URL, { 
                 method: "POST", 
-                body: JSON.stringify({ 
-                    action: 'updateStatus', 
-                    rowIndex: rowIndex, 
-                    newStatus: newStat,
-                    newPerson: newPerson
-                }) 
+                body: JSON.stringify({ action: 'updateStatus', rowIndex: rowIndex, newStatus: newStat, newPerson: newPerson }) 
             })
             .then(r=>r.json()).then(res => {
                 if(res.result==='success') alert("Updated Successfully!");
@@ -278,17 +399,21 @@
             ctx.fillStyle = "#333"; ctx.font = "bold 18px Arial"; 
             ctx.fillText("TICKET: "+refId, 30, 140); ctx.fillText("DATE: "+new Date().toLocaleDateString(), 400, 140);
 
-            // Since assignment happens LATER, we show "Pending" on the initial receipt
             ctx.fillStyle = "#eff6ff"; ctx.fillRect(30, 170, 540, 80);
             ctx.fillStyle = "#1e40af"; ctx.font = "bold 14px Arial"; ctx.fillText("STATUS", 50, 200);
-            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText("OPEN - Pending Assignment", 50, 230);
+            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText("OPEN", 50, 230);
 
             let y = 300;
             const row = (l, v) => { ctx.fillStyle="#64748b"; ctx.font="bold 16px Arial"; ctx.fillText(l,30,y); ctx.fillStyle="#000"; ctx.fillText(v||"-",200,y); y+=35; };
-            row("Worker:", formData.name); row("Gate Pass:", formData.gatePass); row("Area:", formData.area); row("Job:", formData.jobType);
+            row("Worker:", formData.name); row("Emp Code:", formData.empCode); row("Designation:", formData.designation); row("Category:", formData.category);
             
-            y+=20; ctx.fillStyle="#f1f5f9"; ctx.fillRect(30,y,540,40); ctx.fillStyle="#000"; ctx.fillText("COMPLAINT:",40,y+25);
-            y+=60; wrapText(ctx, formData.description, 30, y, 540, 24);
+            y+=20; ctx.fillStyle="#f1f5f9"; ctx.fillRect(30,y,540,40); ctx.fillStyle="#000"; ctx.fillText("DETAILS:",40,y+25);
+            y+=60; 
+            if(formData.audioData) {
+                ctx.font="italic 16px Arial"; ctx.fillText("[Voice Note Recorded]", 30, y);
+            } else {
+                wrapText(ctx, formData.description, 30, y, 540, 24);
+            }
 
             if(formData.photoData) {
                 let img = new Image(); img.onload = () => { ctx.drawImage(img, 30, 600, 200, 200); finalize(); }; img.src = formData.photoData;
