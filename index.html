@@ -72,7 +72,7 @@
                 <!-- Row 2: Designation & Mobile -->
                 <div class="grid grid-cols-2 gap-3">
                     <input type="text" id="designation" placeholder="पद (Designation)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
-                    <input type="tel" id="mobile" placeholder="मोबाइल नंबर" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                    <input type="tel" id="mobile" placeholder="मोबाइल नंबर *" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 </div>
                 
                 <!-- Row 3: Category & Project -->
@@ -208,6 +208,7 @@
             const name = document.getElementById('name');
             const desig = document.getElementById('designation');
             const empCheck = document.getElementById('empCheck');
+            const mobile = document.getElementById('mobile');
             
             // Reset fields
             input.value = ""; name.value = ""; desig.value = ""; 
@@ -222,10 +223,12 @@
                 
                 // Unlock Name & Designation
                 name.readOnly = false; name.classList.remove('bg-slate-100', 'cursor-not-allowed'); name.classList.add('bg-white', 'border-blue-100');
-                name.placeholder = "नाम दर्ज करें (Enter Name)";
+                name.placeholder = "नाम दर्ज करें (Enter Name) *";
                 
                 desig.readOnly = false; desig.classList.remove('bg-slate-100', 'cursor-not-allowed'); desig.classList.add('bg-white', 'border-blue-100');
                 desig.placeholder = "पद दर्ज करें (Enter Designation)";
+                
+                mobile.placeholder = "मोबाइल नंबर (अनिवार्य) *";
             } else {
                 input.disabled = false; input.classList.remove('bg-slate-100');
                 
@@ -242,6 +245,7 @@
                     name.placeholder = "नाम (स्वचालित)";
                     desig.placeholder = "पद (स्वचालित)";
                 }
+                mobile.placeholder = "मोबाइल नंबर";
             }
         }
 
@@ -289,9 +293,21 @@
             
             // Validations
             const mode = document.querySelector('input[name="idMode"]:checked').value;
-            if(mode !== 'newJoin' && !document.getElementById('name').value) {
-                alert("कृपया वैध EmpCode या Oracle ID दर्ज करें।"); return;
+            const nameVal = document.getElementById('name').value;
+            const mobileVal = document.getElementById('mobile').value;
+
+            // Strict Validation for New Joining
+            if (mode === 'newJoin') {
+                if (!nameVal.trim() || !mobileVal.trim()) {
+                    alert("नई ज्वाइनिंग के लिए नाम और मोबाइल नंबर अनिवार्य हैं। (Name and Mobile are required)");
+                    return;
+                }
+            } else {
+                if (!nameVal) {
+                     alert("कृपया वैध EmpCode या Oracle ID दर्ज करें।"); return;
+                }
             }
+
             if(!document.getElementById('description').value && !audioBase64) {
                 alert("कृपया विवरण लिखें या वॉयस नोट रिकॉर्ड करें।"); return;
             }
@@ -304,11 +320,11 @@
 
             const data = {
                 action: 'submit',
-                empCode: document.getElementById('finalEmpCode').value || "N/A",
-                oracleId: document.getElementById('finalOracleId').value || "N/A",
-                name: document.getElementById('name').value,
+                empCode: document.getElementById('finalEmpCode').value || "",
+                oracleId: document.getElementById('finalOracleId').value || "",
+                name: nameVal,
                 designation: document.getElementById('designation').value,
-                mobile: document.getElementById('mobile').value,
+                mobile: mobileVal,
                 category: document.getElementById('category').value,
                 projectType: document.getElementById('projectType').value,
                 description: document.getElementById('description').value,
