@@ -43,12 +43,14 @@
             <form id="reportForm" class="space-y-4">
                 
                 <!-- Identification Mode Selection -->
-                <div class="flex gap-2 text-xs font-bold text-slate-600 mb-2">
-                    <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="empCode" checked> Emp Code
+                <div class="flex gap-4 text-sm font-bold text-slate-600 mb-2">
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded border hover:bg-white">
+                        <input type="radio" name="idMode" value="empCode" checked onchange="toggleMode()"> 
+                        <span>Emp Code</span>
                     </label>
-                    <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="oracle"> Oracle ID
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded border hover:bg-white">
+                        <input type="radio" name="idMode" value="oracle" onchange="toggleMode()"> 
+                        <span>Oracle ID</span>
                     </label>
                 </div>
 
@@ -58,7 +60,7 @@
                         <input type="text" id="identityInput" placeholder="Emp Code दर्ज करें" class="p-3 bg-white border-2 border-blue-100 rounded-lg text-sm w-full outline-blue-500 font-bold" onblur="lookupEmp()">
                         <div id="empCheck" class="absolute right-3 top-3.5 hidden"><i class="fa-solid fa-check-circle text-green-500"></i></div>
                     </div>
-                    <!-- Name Input -->
+                    <!-- Name Input (Readonly) -->
                     <input type="text" id="name" placeholder="नाम (Name)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
                 </div>
 
@@ -67,7 +69,7 @@
 
                 <!-- Row 2: Designation & Mobile -->
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- Designation Input -->
+                    <!-- Designation Input (Readonly) -->
                     <input type="text" id="designation" placeholder="पद (Designation)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
                     <input type="tel" id="mobile" placeholder="मोबाइल नंबर" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 </div>
@@ -82,7 +84,7 @@
                         <option value="Other">अन्य (Other)</option>
                     </select>
                     
-                    <select id="projectType" required class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm w-full outline-blue-500 font-bold">
+                    <select id="projectType" required class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm w-full outline-blue-500 font-bold text-blue-900">
                         <option value="">PROJECT / SUPPLY *</option>
                         <option value="PROJECT">PROJECT</option>
                         <option value="SUPPLY">SUPPLY</option>
@@ -93,7 +95,7 @@
                     <label class="text-xs font-bold text-slate-500 uppercase ml-1">शिकायत का विवरण</label>
                     <textarea id="description" rows="2" placeholder="यहाँ लिखें..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
                     
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 my-2">
                         <div class="h-px bg-slate-200 flex-1"></div>
                         <span class="text-xs text-slate-400">या आवाज़ रिकॉर्ड करें</span>
                         <div class="h-px bg-slate-200 flex-1"></div>
@@ -172,8 +174,10 @@
     <canvas id="receiptCanvas" width="600" height="900" style="display:none;"></canvas>
 
     <script>
+        // ============================================
         // 🚀 PASTE YOUR APP SCRIPT URL HERE
-        const WEB_APP_URL = "https://script.google.com/macros/library/d/1RZZMWppYZ8w278oe9LsIc6TzXokYxUcRjVI5thsYWg5qO3xkRsEFeuq4/9"; 
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-aCqolBYp4-dsRshFmIJ2KIQgaotBgeXI2FBUmmRYDdcTCRnioxc5PdNY-K3Zcobu/exec"; 
+        // ============================================
         
         let empList = [];
         let globalStaffList = [];
@@ -181,12 +185,6 @@
         let mediaRecorder; let audioChunks = []; let audioBase64 = ""; let isRecording = false;
 
         window.onload = function() {
-            // Activate Buttons Immediately using the JS listener
-            const radios = document.querySelectorAll('input[name="idMode"]');
-            radios.forEach(radio => {
-                radio.addEventListener('change', toggleMode);
-            });
-
             if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
             fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
                 document.getElementById('initLoader').classList.add('hidden');
@@ -201,9 +199,8 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- MODE TOGGLE (FIXED) ---
+        // --- MODE TOGGLE ---
         function toggleMode() {
-            // Securely check which radio is selected
             const radios = document.getElementsByName('idMode');
             let mode = 'empCode';
             for (let i = 0; i < radios.length; i++) {
@@ -211,56 +208,33 @@
             }
 
             const input = document.getElementById('identityInput');
-            const name = document.getElementById('name');
-            const desig = document.getElementById('designation');
-            const mobile = document.getElementById('mobile');
-            const empCheck = document.getElementById('empCheck');
-            
-            // Reset input fields
-            input.value = ""; 
-            name.value = ""; 
-            desig.value = ""; 
-            
-            document.getElementById('oracleId').value = "";
+            // Clear inputs when switching mode
+            input.value = "";
+            document.getElementById('name').value = "";
+            document.getElementById('designation').value = "";
             document.getElementById('finalEmpCode').value = "";
             document.getElementById('finalOracleId').value = "";
-            empCheck.classList.add('hidden');
+            document.getElementById('empCheck').classList.add('hidden');
 
-            // Standard Mode (EmpCode/Oracle)
-            input.disabled = false; 
-            input.classList.remove('bg-slate-100', 'cursor-not-allowed');
-            input.classList.add('bg-white');
-            
-            // LOCK Name & Designation
-            name.readOnly = true;
-            name.setAttribute('readonly', 'true');
-            name.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
-            name.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
-            
-            desig.readOnly = true;
-            desig.setAttribute('readonly', 'true');
-            desig.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
-            desig.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
-            
             if(mode === 'empCode') {
                 input.placeholder = "Emp Code दर्ज करें";
-                name.placeholder = "नाम (स्वचालित)";
-                desig.placeholder = "पद (स्वचालित)";
             } else {
                 input.placeholder = "Oracle ID दर्ज करें";
-                name.placeholder = "नाम (स्वचालित)";
-                desig.placeholder = "पद (स्वचालित)";
             }
-            mobile.placeholder = "मोबाइल नंबर";
         }
 
         function lookupEmp() {
-            const isEmpCode = document.querySelector('input[name="idMode"][value="empCode"]').checked;
             const val = document.getElementById('identityInput').value.trim();
             if(!val) return;
 
+            const radios = document.getElementsByName('idMode');
+            let mode = 'empCode';
+            for (let i = 0; i < radios.length; i++) {
+                if (radios[i].checked) { mode = radios[i].value; break; }
+            }
+
             let match;
-            if(isEmpCode) {
+            if(mode === 'empCode') {
                 match = empList.find(e => e.code.toLowerCase() === val.toLowerCase());
             } else {
                 match = empList.find(e => e.oracle.toLowerCase() === val.toLowerCase());
@@ -269,12 +243,13 @@
             if(match) {
                 document.getElementById('name').value = match.name;
                 document.getElementById('designation').value = match.designation;
-                document.getElementById('oracleId').value = match.oracle;
                 document.getElementById('finalEmpCode').value = match.code;
                 document.getElementById('finalOracleId').value = match.oracle;
                 document.getElementById('empCheck').classList.remove('hidden');
             } else {
-                alert("कर्मचारी नहीं मिला। कृपया जांच करें।");
+                alert("कर्मचारी नहीं मिला। कृपया जांच करें। (Employee Not Found)");
+                document.getElementById('name').value = "";
+                document.getElementById('designation').value = "";
                 document.getElementById('empCheck').classList.add('hidden');
             }
         }
@@ -293,7 +268,7 @@
             e.preventDefault();
             
             const nameVal = document.getElementById('name').value;
-            if (!nameVal) { alert("कृपया वैध EmpCode या Oracle ID दर्ज करें।"); return; }
+            if (!nameVal) { alert("कृपया वैध EmpCode या Oracle ID दर्ज करें और नाम आने दें।"); return; }
 
             if(!document.getElementById('description').value && !audioBase64) {
                 alert("कृपया विवरण लिखें या वॉयस नोट रिकॉर्ड करें।"); return;
@@ -392,7 +367,7 @@
                     document.getElementById('staffLoginForm').classList.add('hidden');
                     document.getElementById('staffDashboard').classList.remove('hidden');
                     renderAdminTickets(res.tickets);
-                } else { alert(res.error); }
+                } else { alert(res.error); btn.innerText = "लॉगिन"; }
             });
         }
 
