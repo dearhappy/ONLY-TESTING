@@ -43,16 +43,15 @@
             <form id="reportForm" class="space-y-4">
                 
                 <!-- Identification Mode Selection -->
-                <!-- Removed inline onchange to rely on JS listener for better reliability -->
                 <div class="flex gap-2 text-xs font-bold text-slate-600 mb-2">
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="empCode" checked> Emp Code
+                        <input type="radio" name="idMode" value="empCode" checked onchange="toggleMode()"> Emp Code
                     </label>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="oracle"> Oracle ID
+                        <input type="radio" name="idMode" value="oracle" onchange="toggleMode()"> Oracle ID
                     </label>
                     <label class="flex items-center gap-1 cursor-pointer text-blue-600">
-                        <input type="radio" name="idMode" value="newJoin"> Joining Under Process
+                        <input type="radio" name="idMode" value="newJoin" onchange="toggleMode()"> Joining Under Process
                     </label>
                 </div>
 
@@ -62,7 +61,7 @@
                         <input type="text" id="identityInput" placeholder="Emp Code दर्ज करें" class="p-3 bg-white border-2 border-blue-100 rounded-lg text-sm w-full outline-blue-500 font-bold" onblur="lookupEmp()">
                         <div id="empCheck" class="absolute right-3 top-3.5 hidden"><i class="fa-solid fa-check-circle text-green-500"></i></div>
                     </div>
-                    <!-- Name Input: Starts Readonly -->
+                    <!-- Name Input -->
                     <input type="text" id="name" placeholder="नाम (Name)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
                 </div>
 
@@ -71,7 +70,7 @@
 
                 <!-- Row 2: Designation & Mobile -->
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- Designation Input: Starts Readonly -->
+                    <!-- Designation Input -->
                     <input type="text" id="designation" placeholder="पद (Designation)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
                     <input type="tel" id="mobile" placeholder="मोबाइल नंबर" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 </div>
@@ -185,17 +184,18 @@
         let mediaRecorder; let audioChunks = []; let audioBase64 = ""; let isRecording = false;
 
         window.onload = function() {
+            // 1. Activate Buttons Immediately (Fixes issue if URL is missing/wrong)
+            const radios = document.getElementsByName('idMode');
+            for(let i=0; i<radios.length; i++) {
+                radios[i].addEventListener('change', toggleMode);
+            }
+
+            // 2. Fetch Data
             if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
             fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
                 document.getElementById('initLoader').classList.add('hidden');
                 if(data.status==='success') { empList = data.empList; }
             });
-            
-            // Explicitly bind radio buttons to toggleMode
-            const radios = document.getElementsByName('idMode');
-            for(let i=0; i<radios.length; i++) {
-                radios[i].addEventListener('change', toggleMode);
-            }
         };
 
         function switchTab(tab) {
@@ -205,7 +205,7 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- MODE TOGGLE (FIXED LOGIC) ---
+        // --- MODE TOGGLE (FIXED) ---
         function toggleMode() {
             const radios = document.getElementsByName('idMode');
             let mode = 'empCode';
@@ -219,7 +219,7 @@
             const mobile = document.getElementById('mobile');
             const empCheck = document.getElementById('empCheck');
             
-            // Reset logic
+            // Reset
             input.value = ""; 
             if(mode !== 'newJoin') { name.value = ""; desig.value = ""; } 
             
@@ -235,16 +235,18 @@
                 input.classList.remove('bg-white');
                 input.classList.add('bg-slate-100', 'cursor-not-allowed');
                 
-                // FORCE UNLOCK Name
-                name.readOnly = false; // Important property
-                name.removeAttribute('readonly'); // Important attribute
+                // UNLOCK Name
+                name.disabled = false; // Guaranteed unlock
+                name.readOnly = false;
+                name.removeAttribute('readonly');
                 name.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 name.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 name.placeholder = "नाम दर्ज करें (Enter Name) *";
                 
-                // FORCE UNLOCK Designation
-                desig.readOnly = false; // Important property
-                desig.removeAttribute('readonly'); // Important attribute
+                // UNLOCK Designation
+                desig.disabled = false; // Guaranteed unlock
+                desig.readOnly = false;
+                desig.removeAttribute('readonly');
                 desig.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 desig.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 desig.placeholder = "पद दर्ज करें (Enter Designation)";
