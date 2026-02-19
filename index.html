@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Worker Issue Portal</title>
+    <title>श्रमिक समस्या पोर्टल</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -24,13 +24,13 @@
         
         <!-- Header -->
         <div class="bg-slate-900 text-white p-6 relative">
-            <h1 class="text-xl font-bold">Issue Portal</h1>
-            <p class="text-slate-400 text-xs mt-1">Report, Track & Resolve</p>
+            <h1 class="text-xl font-bold">समस्या पोर्टल (Issue Portal)</h1>
+            <p class="text-slate-400 text-xs mt-1">रिपोर्ट करें, ट्रैक करें और समाधान पाएं</p>
             
             <div class="flex space-x-6 mt-4 text-sm">
-                <button onclick="switchTab('report')" id="tab-report" class="tab-btn active pb-2">Report</button>
-                <button onclick="switchTab('track')" id="tab-track" class="tab-btn pb-2">Track Status</button>
-                <button onclick="switchTab('staff')" id="tab-staff" class="tab-btn pb-2">Admin Login</button>
+                <button onclick="switchTab('report')" id="tab-report" class="tab-btn active pb-2">रिपोर्ट</button>
+                <button onclick="switchTab('track')" id="tab-track" class="tab-btn pb-2">स्थिति देखें</button>
+                <button onclick="switchTab('staff')" id="tab-staff" class="tab-btn pb-2">एडमिन लॉगिन</button>
             </div>
         </div>
 
@@ -38,55 +38,79 @@
         <div id="view-report" class="p-6 space-y-4 tab-content">
             <!-- Loader Overlay -->
             <div id="initLoader" class="absolute inset-0 bg-white/90 z-20 flex items-center justify-center flex-col">
-                <div class="loader mb-2"></div><p class="text-xs text-slate-500">Loading Employee Data...</p>
+                <div class="loader mb-2"></div><p class="text-xs text-slate-500">कर्मचारी डेटा लोड हो रहा है...</p>
             </div>
 
             <form id="reportForm" class="space-y-4">
-                <!-- Row 1: Emp Code & Name -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="relative">
-                        <input type="text" id="empCode" placeholder="Enter Emp Code" class="p-3 bg-white border-2 border-blue-100 rounded-lg text-sm w-full outline-blue-500 font-bold" onblur="lookupEmp()">
-                        <div id="empCheck" class="absolute right-3 top-3.5 hidden"><i class="fa-solid fa-check-circle text-green-500"></i></div>
-                    </div>
-                    <input type="text" id="name" placeholder="Name (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                
+                <!-- Identification Mode Selection -->
+                <div class="flex gap-2 text-xs font-bold text-slate-600 mb-2">
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="idMode" value="empCode" checked onchange="toggleMode()"> Emp Code
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="radio" name="idMode" value="oracle" onchange="toggleMode()"> Oracle ID
+                    </label>
+                    <label class="flex items-center gap-1 cursor-pointer text-blue-600">
+                        <input type="radio" name="idMode" value="newJoin" onchange="toggleMode()"> Joining Under Process
+                    </label>
                 </div>
 
-                <!-- Row 2: Oracle & Designation -->
+                <!-- Input Row: Identity -->
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="oracleId" placeholder="Oracle ID (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
-                    <input type="text" id="designation" placeholder="Designation (Auto)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                    <div class="relative">
+                        <input type="text" id="identityInput" placeholder="Emp Code दर्ज करें" class="p-3 bg-white border-2 border-blue-100 rounded-lg text-sm w-full outline-blue-500 font-bold" onblur="lookupEmp()">
+                        <div id="empCheck" class="absolute right-3 top-3.5 hidden"><i class="fa-solid fa-check-circle text-green-500"></i></div>
+                    </div>
+                    <input type="text" id="name" placeholder="नाम (Name)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                </div>
+
+                <!-- Hidden inputs for backend -->
+                <input type="hidden" id="finalEmpCode">
+                <input type="hidden" id="finalOracleId">
+
+                <!-- Row 2: Designation & Mobile -->
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="designation" placeholder="पद (Designation)" readonly class="p-3 bg-slate-100 border rounded-lg text-sm w-full text-slate-500 cursor-not-allowed">
+                    <input type="tel" id="mobile" placeholder="मोबाइल नंबर" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 </div>
                 
-                <input type="tel" id="mobile" placeholder="Your Mobile Number" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
-                
-                <select id="category" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
-                    <option value="">Select Category...</option>
-                    <option value="Safety">Safety</option>
-                    <option value="Payroll">Payroll</option>
-                    <option value="Facility">Facility</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Other">Other</option>
-                </select>
+                <!-- Row 3: Category & Project -->
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="category" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                        <option value="">श्रेणी चुनें...</option>
+                        <option value="Safety">सुरक्षा (Safety)</option>
+                        <option value="Payroll">वेतन (Payroll)</option>
+                        <option value="Facility">सुविधा (Facility)</option>
+                        <option value="Transport">परिवहन (Transport)</option>
+                        <option value="Other">अन्य (Other)</option>
+                    </select>
+                    
+                    <select id="projectType" required class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm w-full outline-blue-500 font-bold">
+                        <option value="">PROJECT / SUPPLY *</option>
+                        <option value="PROJECT">PROJECT</option>
+                        <option value="SUPPLY">SUPPLY</option>
+                    </select>
+                </div>
 
                 <!-- Complaint Details: Text OR Voice -->
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">Complaint Details</label>
-                    
-                    <textarea id="description" rows="2" placeholder="Type here..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
+                    <label class="text-xs font-bold text-slate-500 uppercase ml-1">शिकायत का विवरण</label>
+                    <textarea id="description" rows="2" placeholder="यहाँ लिखें..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
                     
                     <div class="flex items-center gap-2">
                         <div class="h-px bg-slate-200 flex-1"></div>
-                        <span class="text-xs text-slate-400">OR RECORD VOICE</span>
+                        <span class="text-xs text-slate-400">या आवाज़ रिकॉर्ड करें</span>
                         <div class="h-px bg-slate-200 flex-1"></div>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <button type="button" id="recordBtn" onclick="toggleRecording()" class="flex-1 bg-red-50 text-red-600 border border-red-100 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-red-100 transition-all">
-                            <i class="fa-solid fa-microphone"></i> <span id="recordText">Record</span>
+                            <i class="fa-solid fa-microphone"></i> <span id="recordText">रिकॉर्ड करें</span>
                         </button>
                         <div id="audioPreview" class="hidden flex-1 flex items-center gap-2 bg-green-50 px-3 py-2 rounded-lg border border-green-100">
                             <i class="fa-solid fa-file-audio text-green-600"></i>
-                            <span class="text-xs text-green-700 font-medium">Audio Saved</span>
+                            <span class="text-xs text-green-700 font-medium">ऑडियो सुरक्षित</span>
                             <button type="button" onclick="resetAudio()" class="ml-auto text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
                         </div>
                     </div>
@@ -95,11 +119,11 @@
                 <div class="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('photo').click()">
                     <input type="file" id="photo" class="hidden" accept="image/*">
                     <i class="fa-solid fa-camera text-slate-400"></i>
-                    <span id="photoLabel" class="text-xs text-slate-500 ml-2">Attach Photo (Optional)</span>
+                    <span id="photoLabel" class="text-xs text-slate-500 ml-2">फोटो जोड़ें (वैकल्पिक)</span>
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-slate-900 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-slate-800 flex justify-center items-center gap-2">
-                    Submit Complaint
+                    शिकायत भेजें
                 </button>
             </form>
         </div>
@@ -107,14 +131,14 @@
         <!-- VIEW 2: TRACK STATUS -->
         <div id="view-track" class="hidden p-6 space-y-4 tab-content">
             <div class="space-y-2">
-                <label class="text-sm font-bold text-slate-700">Track by EmpCode or Mobile</label>
+                <label class="text-sm font-bold text-slate-700">EmpCode / Oracle ID / मोबाइल</label>
                 <div class="flex gap-2">
-                    <input type="text" id="trackInput" placeholder="Enter EmpCode or Mobile" class="flex-1 p-3 bg-slate-50 border rounded-lg text-sm outline-blue-500">
+                    <input type="text" id="trackInput" placeholder="विवरण दर्ज करें" class="flex-1 p-3 bg-slate-50 border rounded-lg text-sm outline-blue-500">
                     <button onclick="trackStatus()" class="bg-blue-600 text-white px-4 rounded-lg"><i class="fa-solid fa-search"></i></button>
                 </div>
             </div>
             <div id="trackResults" class="space-y-3">
-                <p class="text-center text-slate-400 text-sm mt-10">Enter details to see history.</p>
+                <p class="text-center text-slate-400 text-sm mt-10">इतिहास देखने के लिए विवरण दर्ज करें।</p>
             </div>
         </div>
 
@@ -122,16 +146,16 @@
         <div id="view-staff" class="hidden p-6 space-y-4 tab-content">
             <div id="staffLoginForm" class="space-y-4 mt-8">
                 <div class="text-center mb-6">
-                     <h3 class="font-bold text-slate-800 text-lg">Admin Login</h3>
+                     <h3 class="font-bold text-slate-800 text-lg">एडमिन लॉगिन (Admin Login)</h3>
                 </div>
-                <input type="password" id="staffPasscode" placeholder="Enter Passcode" class="w-full p-3 bg-slate-50 border rounded-lg text-center font-bold tracking-widest outline-blue-500 text-xl">
-                <button onclick="staffLogin()" id="staffLoginBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700">Login</button>
+                <input type="password" id="staffPasscode" placeholder="पासकोड दर्ज करें" class="w-full p-3 bg-slate-50 border rounded-lg text-center font-bold tracking-widest outline-blue-500 text-xl">
+                <button onclick="staffLogin()" id="staffLoginBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700">लॉगिन</button>
             </div>
 
             <div id="staffDashboard" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="font-bold text-slate-800">Manage Complaints</h3>
-                    <button onclick="location.reload()" class="text-xs text-red-500 font-bold">LOGOUT</button>
+                    <h3 class="font-bold text-slate-800">शिकायत प्रबंधन</h3>
+                    <button onclick="location.reload()" class="text-xs text-red-500 font-bold">लॉग आउट</button>
                 </div>
                 <div id="staffTicketList" class="space-y-3 overflow-y-auto max-h-[400px]">
                     <!-- Tickets injected here -->
@@ -142,10 +166,10 @@
         <!-- SUCCESS OVERLAY -->
         <div id="successOverlay" class="hidden absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-check text-2xl text-green-600"></i></div>
-            <h2 class="text-xl font-bold mb-2">Submitted!</h2>
+            <h2 class="text-xl font-bold mb-2">जमा हो गया!</h2>
             <img id="generatedReceipt" class="w-48 shadow-lg border rounded mb-4">
-            <a id="downloadLink" class="bg-slate-900 text-white px-6 py-2 rounded-lg text-sm">Download Receipt</a>
-            <button onclick="location.reload()" class="mt-4 text-slate-500 text-sm underline">Close</button>
+            <a id="downloadLink" class="bg-slate-900 text-white px-6 py-2 rounded-lg text-sm">रसीद डाउनलोड करें</a>
+            <button onclick="location.reload()" class="mt-4 text-slate-500 text-sm underline">बंद करें</button>
         </div>
 
     </div>
@@ -160,20 +184,13 @@
         let globalStaffList = [];
         let base64Image = "", fileName = "";
         
-        // Audio Vars
-        let mediaRecorder;
-        let audioChunks = [];
-        let audioBase64 = "";
-        let isRecording = false;
+        let mediaRecorder; let audioChunks = []; let audioBase64 = ""; let isRecording = false;
 
-        // --- INIT ---
         window.onload = function() {
             if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
             fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
                 document.getElementById('initLoader').classList.add('hidden');
-                if(data.status==='success') {
-                    empList = data.empList;
-                }
+                if(data.status==='success') { empList = data.empList; }
             });
         };
 
@@ -184,28 +201,133 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- LOGIC 1: AUTO FILL ---
-        function lookupEmp() {
-            const code = document.getElementById('empCode').value.trim();
-            const match = empList.find(e => e.code.toLowerCase() === code.toLowerCase());
+        // --- MODE TOGGLE ---
+        function toggleMode() {
+            const mode = document.querySelector('input[name="idMode"]:checked').value;
+            const input = document.getElementById('identityInput');
+            const name = document.getElementById('name');
+            const desig = document.getElementById('designation');
+            const empCheck = document.getElementById('empCheck');
             
+            // Reset fields
+            input.value = ""; name.value = ""; desig.value = ""; 
+            document.getElementById('oracleId').value = "";
+            document.getElementById('finalEmpCode').value = "";
+            document.getElementById('finalOracleId').value = "";
+            empCheck.classList.add('hidden');
+
+            if(mode === 'newJoin') {
+                input.disabled = true; input.placeholder = "लागू नहीं (N/A)";
+                input.classList.add('bg-slate-100');
+                
+                // Unlock Name & Designation
+                name.readOnly = false; name.classList.remove('bg-slate-100', 'cursor-not-allowed'); name.classList.add('bg-white', 'border-blue-100');
+                name.placeholder = "नाम दर्ज करें (Enter Name)";
+                
+                desig.readOnly = false; desig.classList.remove('bg-slate-100', 'cursor-not-allowed'); desig.classList.add('bg-white', 'border-blue-100');
+                desig.placeholder = "पद दर्ज करें (Enter Designation)";
+            } else {
+                input.disabled = false; input.classList.remove('bg-slate-100');
+                
+                // Lock Name & Designation (Auto-fill only)
+                name.readOnly = true; name.classList.add('bg-slate-100', 'cursor-not-allowed'); name.classList.remove('bg-white');
+                desig.readOnly = true; desig.classList.add('bg-slate-100', 'cursor-not-allowed'); desig.classList.remove('bg-white');
+                
+                if(mode === 'empCode') {
+                    input.placeholder = "Emp Code दर्ज करें";
+                    name.placeholder = "नाम (स्वचालित)";
+                    desig.placeholder = "पद (स्वचालित)";
+                } else {
+                    input.placeholder = "Oracle ID दर्ज करें";
+                    name.placeholder = "नाम (स्वचालित)";
+                    desig.placeholder = "पद (स्वचालित)";
+                }
+            }
+        }
+
+        function lookupEmp() {
+            const mode = document.querySelector('input[name="idMode"]:checked').value;
+            if(mode === 'newJoin') return;
+
+            const val = document.getElementById('identityInput').value.trim();
+            if(!val) return;
+
+            let match;
+            if(mode === 'empCode') {
+                match = empList.find(e => e.code.toLowerCase() === val.toLowerCase());
+            } else {
+                match = empList.find(e => e.oracle.toLowerCase() === val.toLowerCase());
+            }
+
             if(match) {
                 document.getElementById('name').value = match.name;
-                document.getElementById('oracleId').value = match.oracle;
                 document.getElementById('designation').value = match.designation;
+                document.getElementById('oracleId').value = match.oracle;
+                
+                document.getElementById('finalEmpCode').value = match.code;
+                document.getElementById('finalOracleId').value = match.oracle;
+                
                 document.getElementById('empCheck').classList.remove('hidden');
             } else {
-                document.getElementById('name').value = "";
-                document.getElementById('oracleId').value = "";
-                document.getElementById('designation').value = "";
+                alert("कर्मचारी नहीं मिला। कृपया जांच करें।");
                 document.getElementById('empCheck').classList.add('hidden');
             }
         }
 
-        // --- LOGIC 2: AUDIO RECORDING ---
+        // --- SUBMIT ---
+        document.getElementById('photo').addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            if(file) {
+                let r = new FileReader();
+                r.onload = ev => { base64Image=ev.target.result; fileName=file.name; document.getElementById('photoLabel').innerText = "फोटो संलग्न!"; };
+                r.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validations
+            const mode = document.querySelector('input[name="idMode"]:checked').value;
+            if(mode !== 'newJoin' && !document.getElementById('name').value) {
+                alert("कृपया वैध EmpCode या Oracle ID दर्ज करें।"); return;
+            }
+            if(!document.getElementById('description').value && !audioBase64) {
+                alert("कृपया विवरण लिखें या वॉयस नोट रिकॉर्ड करें।"); return;
+            }
+            if(!document.getElementById('projectType').value) {
+                alert("कृपया PROJECT या SUPPLY चुनें।"); return;
+            }
+
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "प्रक्रिया चल रही है..."; btn.disabled = true;
+
+            const data = {
+                action: 'submit',
+                empCode: document.getElementById('finalEmpCode').value || "N/A",
+                oracleId: document.getElementById('finalOracleId').value || "N/A",
+                name: document.getElementById('name').value,
+                designation: document.getElementById('designation').value,
+                mobile: document.getElementById('mobile').value,
+                category: document.getElementById('category').value,
+                projectType: document.getElementById('projectType').value,
+                description: document.getElementById('description').value,
+                audioData: audioBase64,
+                photoData: base64Image, photoName: fileName
+            };
+
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
+            .then(r=>r.json()).then(res => {
+                if(res.result === 'success') {
+                    generateReceipt(res.refId, data);
+                    document.getElementById('successOverlay').classList.remove('hidden');
+                } else { alert("Error: "+res.error); btn.innerText="शिकायत भेजें"; btn.disabled=false; }
+            });
+        });
+
+        // --- AUDIO ---
         async function toggleRecording() {
             if(!isRecording) {
-                // Start
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
@@ -221,203 +343,108 @@
                             document.getElementById('audioPreview').classList.add('flex');
                         };
                     };
-                    mediaRecorder.start();
-                    isRecording = true;
+                    mediaRecorder.start(); isRecording = true;
                     document.getElementById('recordBtn').classList.add('recording-pulse', 'bg-red-500', 'text-white');
-                    document.getElementById('recordText').innerText = "Stop";
+                    document.getElementById('recordText').innerText = "रोकें";
                 } catch(err) { alert("Microphone access needed."); }
             } else {
-                // Stop
-                mediaRecorder.stop();
-                isRecording = false;
+                mediaRecorder.stop(); isRecording = false;
                 document.getElementById('recordBtn').classList.remove('recording-pulse', 'bg-red-500', 'text-white');
-                document.getElementById('recordText').innerText = "Record";
+                document.getElementById('recordText').innerText = "रिकॉर्ड करें";
             }
         }
-        
-        function resetAudio() {
-            audioBase64 = "";
-            document.getElementById('audioPreview').classList.add('hidden');
-            document.getElementById('audioPreview').classList.remove('flex');
-        }
+        function resetAudio() { audioBase64 = ""; document.getElementById('audioPreview').classList.add('hidden'); document.getElementById('audioPreview').classList.remove('flex'); }
 
-        // --- LOGIC 3: SUBMIT ---
-        document.getElementById('photo').addEventListener('change', function(e) {
-            let file = e.target.files[0];
-            if(file) {
-                let r = new FileReader();
-                r.onload = ev => { base64Image=ev.target.result; fileName=file.name; document.getElementById('photoLabel').innerText = "Photo Attached!"; };
-                r.readAsDataURL(file);
-            }
-        });
-
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Check if user has audio OR text
-            if(!document.getElementById('description').value && !audioBase64) {
-                alert("Please provide text details OR record a voice note."); return;
-            }
-
-            const btn = document.getElementById('submitBtn');
-            btn.innerText = "Processing..."; btn.disabled = true;
-
-            const data = {
-                action: 'submit',
-                empCode: document.getElementById('empCode').value,
-                name: document.getElementById('name').value,
-                oracleId: document.getElementById('oracleId').value,
-                designation: document.getElementById('designation').value,
-                mobile: document.getElementById('mobile').value,
-                category: document.getElementById('category').value,
-                description: document.getElementById('description').value,
-                audioData: audioBase64,
-                photoData: base64Image, photoName: fileName
-            };
-
-            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
-            .then(r=>r.json()).then(res => {
-                if(res.result === 'success') {
-                    generateReceipt(res.refId, data);
-                    document.getElementById('successOverlay').classList.remove('hidden');
-                } else { alert("Error: "+res.error); btn.innerText="Submit"; btn.disabled=false; }
-            });
-        });
-
-        // --- TRACK STATUS ---
+        // --- TRACK ---
         function trackStatus() {
             const q = document.getElementById('trackInput').value;
-            if(!q) return alert("Enter EmpCode or Mobile");
+            if(!q) return alert("विवरण दर्ज करें");
             const con = document.getElementById('trackResults');
             con.innerHTML = '<div class="loader mx-auto"></div>';
-
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'track', query: q }) })
             .then(r=>r.json()).then(res => {
                 con.innerHTML = "";
                 if(res.result==='success' && res.tickets.length > 0) {
                     res.tickets.forEach(t => {
                         let statusColor = t.status === 'OPEN' ? 'text-red-500' : 'text-green-600';
-                        con.innerHTML += `
-                            <div class="bg-white p-3 rounded shadow border-l-4 ${t.status==='OPEN'?'border-red-500':'border-green-500'}">
-                                <div class="flex justify-between"><span class="text-xs text-slate-400">${new Date(t.date).toLocaleDateString()}</span> <span class="text-xs font-bold ${statusColor}">${t.status}</span></div>
-                                <p class="text-sm font-semibold text-slate-800 mt-1">${t.complaint}</p>
-                                <p class="text-xs text-slate-500 mt-1">Assigned To: <span class="font-bold">${t.followUp || "Pending"}</span></p>
-                            </div>`;
+                        con.innerHTML += `<div class="bg-white p-3 rounded shadow border-l-4 ${t.status==='OPEN'?'border-red-500':'border-green-500'}">
+                            <div class="flex justify-between"><span class="text-xs text-slate-400">${new Date(t.date).toLocaleDateString()}</span> <span class="text-xs font-bold ${statusColor}">${t.status}</span></div>
+                            <p class="text-sm font-semibold text-slate-800 mt-1">${t.complaint}</p>
+                            <p class="text-xs text-slate-500 mt-1">सौंपा गया: <span class="font-bold">${t.followUp || "लंबित"}</span></p></div>`;
                     });
-                } else { con.innerHTML = '<p class="text-center text-red-400">No records found.</p>'; }
+                } else { con.innerHTML = '<p class="text-center text-red-400">कोई रिकॉर्ड नहीं मिला।</p>'; }
             });
         }
 
-        // --- ADMIN LOGIN & ASSIGN ---
+        // --- ADMIN ---
         function staffLogin() {
             const pass = document.getElementById('staffPasscode').value;
-            if(!pass) return alert("Enter Passcode");
-            const btn = document.getElementById('staffLoginBtn');
-            btn.innerText = "Verifying...";
-            
+            if(!pass) return alert("पासकोड दर्ज करें");
+            const btn = document.getElementById('staffLoginBtn'); btn.innerText = "जांच हो रही है...";
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'staffLogin', passcode: pass }) })
             .then(r=>r.json()).then(res => {
-                btn.innerText = "Login";
+                btn.innerText = "लॉगिन";
                 if(res.result==='success') {
                     globalStaffList = res.staffList;
                     document.getElementById('staffLoginForm').classList.add('hidden');
                     document.getElementById('staffDashboard').classList.remove('hidden');
                     renderAdminTickets(res.tickets);
-                } else { alert(res.error); btn.innerText="Login"; }
+                } else { alert(res.error); }
             });
         }
 
         function renderAdminTickets(tickets) {
-            const list = document.getElementById('staffTicketList');
-            list.innerHTML = "";
-            if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>No complaints.</p>"; return; }
-
+            const list = document.getElementById('staffTicketList'); list.innerHTML = "";
+            if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>कोई शिकायत नहीं।</p>"; return; }
             tickets.forEach(t => {
-                let staffOptions = `<option value="Pending Assignment">Unassigned</option>`;
-                globalStaffList.forEach(s => {
-                    staffOptions += `<option value="${s.name}" ${t.assignedTo === s.name ? 'selected' : ''}>${s.name}</option>`;
-                });
-
-                list.innerHTML += `
-                    <div class="bg-white p-4 rounded shadow border border-slate-200">
+                let staffOptions = `<option value="Pending Assignment">किसी को नहीं सौंपा गया</option>`;
+                globalStaffList.forEach(s => { staffOptions += `<option value="${s.name}" ${t.assignedTo === s.name ? 'selected' : ''}>${s.name}</option>`; });
+                list.innerHTML += `<div class="bg-white p-4 rounded shadow border border-slate-200">
                         <div class="flex justify-between items-start">
-                            <div>
-                                <span class="px-2 py-0.5 rounded text-xs font-bold ${t.status==='OPEN'?'bg-red-100 text-red-600':'bg-green-100 text-green-600'}">${t.status}</span>
-                                <h4 class="font-bold text-sm mt-1">${t.worker} (${t.empCode})</h4>
-                                <p class="text-xs text-slate-600 mb-2">${t.designation} | ${t.category}</p>
-                                <p class="text-sm text-slate-800 italic">"${t.complaint}"</p>
-                            </div>
+                            <div><span class="px-2 py-0.5 rounded text-xs font-bold ${t.status==='OPEN'?'bg-red-100 text-red-600':'bg-green-100 text-green-600'}">${t.status}</span>
+                            <h4 class="font-bold text-sm mt-1">${t.worker} (${t.empCode})</h4>
+                            <p class="text-xs text-slate-600 mb-1">${t.designation} | ${t.category}</p>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-1 rounded">${t.project}</span>
+                            <p class="text-sm text-slate-800 italic mt-1">"${t.complaint}"</p></div>
                             <div class="flex flex-col gap-2">
                                 ${t.photo !== 'No Photo' ? `<a href="${t.photo}" target="_blank"><i class="fa-solid fa-image text-blue-500"></i></a>` : ''}
                                 ${t.audio !== 'No Audio' ? `<a href="${t.audio}" target="_blank"><i class="fa-solid fa-microphone text-red-500"></i></a>` : ''}
                             </div>
                         </div>
-                        
                         <div class="space-y-2 mt-2 pt-2 border-t">
-                             <div>
-                                <label class="text-xs font-bold text-slate-400 uppercase">Assign To</label>
-                                <select id="assign-${t.rowIndex}" class="bg-blue-50 border border-blue-200 p-1 text-xs rounded w-full font-bold text-blue-900">
-                                    ${staffOptions}
-                                </select>
-                             </div>
-
-                             <div class="flex gap-2">
-                                <select id="status-${t.rowIndex}" class="bg-slate-50 border p-1 text-xs rounded w-full">
-                                    <option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option>
-                                    <option value="IN PROGRESS" ${t.status==='IN PROGRESS'?'selected':''}>IN PROGRESS</option>
-                                    <option value="RESOLVED" ${t.status==='RESOLVED'?'selected':''}>RESOLVED</option>
-                                </select>
-                                <button onclick="updateStatus(${t.rowIndex})" class="bg-slate-800 text-white px-3 py-1 text-xs rounded hover:bg-black">Update</button>
-                             </div>
-                        </div>
-                    </div>`;
+                             <div><label class="text-xs font-bold text-slate-400 uppercase">को सौंपें</label>
+                                <select id="assign-${t.rowIndex}" class="bg-blue-50 border border-blue-200 p-1 text-xs rounded w-full font-bold text-blue-900">${staffOptions}</select></div>
+                             <div class="flex gap-2"><select id="status-${t.rowIndex}" class="bg-slate-50 border p-1 text-xs rounded w-full">
+                                    <option value="OPEN" ${t.status==='OPEN'?'selected':''}>खुला (OPEN)</option>
+                                    <option value="IN PROGRESS" ${t.status==='IN PROGRESS'?'selected':''}>प्रगति पर</option>
+                                    <option value="RESOLVED" ${t.status==='RESOLVED'?'selected':''}>हल हो गया</option>
+                                </select><button onclick="updateStatus(${t.rowIndex})" class="bg-slate-800 text-white px-3 py-1 text-xs rounded hover:bg-black">अपडेट</button></div></div></div>`;
             });
         }
 
         function updateStatus(rowIndex) {
             const newPerson = document.getElementById(`assign-${rowIndex}`).value;
             const newStat = document.getElementById(`status-${rowIndex}`).value;
-            
-            fetch(WEB_APP_URL, { 
-                method: "POST", 
-                body: JSON.stringify({ action: 'updateStatus', rowIndex: rowIndex, newStatus: newStat, newPerson: newPerson }) 
-            })
-            .then(r=>r.json()).then(res => {
-                if(res.result==='success') alert("Updated Successfully!");
-                else alert("Failed");
-            });
+            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'updateStatus', rowIndex: rowIndex, newStatus: newStat, newPerson: newPerson }) })
+            .then(r=>r.json()).then(res => { if(res.result==='success') alert("सफलतापूर्वक अपडेट किया गया!"); else alert("विफल"); });
         }
 
-        // --- RECEIPT ---
         function generateReceipt(refId, formData) {
-            const canvas = document.getElementById('receiptCanvas');
-            const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('receiptCanvas'); const ctx = canvas.getContext('2d');
             ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 600, 900);
             ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 0, 600, 100);
-            ctx.fillStyle = "#ffffff"; ctx.font = "bold 28px Arial"; ctx.fillText("COMPLAINT RECEIPT", 30, 60);
-            
-            ctx.fillStyle = "#333"; ctx.font = "bold 18px Arial"; 
-            ctx.fillText("TICKET: "+refId, 30, 140); ctx.fillText("DATE: "+new Date().toLocaleDateString(), 400, 140);
-
+            ctx.fillStyle = "#ffffff"; ctx.font = "bold 28px Arial"; ctx.fillText("शिकायत रसीद (COMPLAINT RECEIPT)", 30, 60);
+            ctx.fillStyle = "#333"; ctx.font = "bold 18px Arial"; ctx.fillText("टिकट: "+refId, 30, 140); ctx.fillText("दिनांक: "+new Date().toLocaleDateString(), 400, 140);
             ctx.fillStyle = "#eff6ff"; ctx.fillRect(30, 170, 540, 80);
-            ctx.fillStyle = "#1e40af"; ctx.font = "bold 14px Arial"; ctx.fillText("STATUS", 50, 200);
-            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText("OPEN", 50, 230);
-
+            ctx.fillStyle = "#1e40af"; ctx.font = "bold 14px Arial"; ctx.fillText("प्रोजेक्ट / आपूर्ति (PROJECT/SUPPLY)", 50, 200);
+            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText(formData.projectType, 50, 230);
             let y = 300;
             const row = (l, v) => { ctx.fillStyle="#64748b"; ctx.font="bold 16px Arial"; ctx.fillText(l,30,y); ctx.fillStyle="#000"; ctx.fillText(v||"-",200,y); y+=35; };
-            row("Worker:", formData.name); row("Emp Code:", formData.empCode); row("Designation:", formData.designation); row("Category:", formData.category);
-            
-            y+=20; ctx.fillStyle="#f1f5f9"; ctx.fillRect(30,y,540,40); ctx.fillStyle="#000"; ctx.fillText("DETAILS:",40,y+25);
+            row("श्रमिक:", formData.name); row("Emp Code:", formData.empCode); row("पद:", formData.designation); row("श्रेणी:", formData.category);
+            y+=20; ctx.fillStyle="#f1f5f9"; ctx.fillRect(30,y,540,40); ctx.fillStyle="#000"; ctx.fillText("विवरण:",40,y+25);
             y+=60; 
-            if(formData.audioData) {
-                ctx.font="italic 16px Arial"; ctx.fillText("[Voice Note Recorded]", 30, y);
-            } else {
-                wrapText(ctx, formData.description, 30, y, 540, 24);
-            }
-
-            if(formData.photoData) {
-                let img = new Image(); img.onload = () => { ctx.drawImage(img, 30, 600, 200, 200); finalize(); }; img.src = formData.photoData;
-            } else finalize();
+            if(formData.audioData) { ctx.font="italic 16px Arial"; ctx.fillText("[वॉयस नोट रिकॉर्ड किया गया]", 30, y); } else { wrapText(ctx, formData.description, 30, y, 540, 24); }
+            if(formData.photoData) { let img = new Image(); img.onload = () => { ctx.drawImage(img, 30, 600, 200, 200); finalize(); }; img.src = formData.photoData; } else finalize();
         }
 
         function finalize() {
