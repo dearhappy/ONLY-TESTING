@@ -43,15 +43,16 @@
             <form id="reportForm" class="space-y-4">
                 
                 <!-- Identification Mode Selection -->
+                <!-- Removed inline onchange to rely on JS listener for better reliability -->
                 <div class="flex gap-2 text-xs font-bold text-slate-600 mb-2">
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="empCode" checked onchange="toggleMode()"> Emp Code
+                        <input type="radio" name="idMode" value="empCode" checked> Emp Code
                     </label>
                     <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="radio" name="idMode" value="oracle" onchange="toggleMode()"> Oracle ID
+                        <input type="radio" name="idMode" value="oracle"> Oracle ID
                     </label>
                     <label class="flex items-center gap-1 cursor-pointer text-blue-600">
-                        <input type="radio" name="idMode" value="newJoin" onchange="toggleMode()"> Joining Under Process
+                        <input type="radio" name="idMode" value="newJoin"> Joining Under Process
                     </label>
                 </div>
 
@@ -189,6 +190,12 @@
                 document.getElementById('initLoader').classList.add('hidden');
                 if(data.status==='success') { empList = data.empList; }
             });
+            
+            // Explicitly bind radio buttons to toggleMode
+            const radios = document.getElementsByName('idMode');
+            for(let i=0; i<radios.length; i++) {
+                radios[i].addEventListener('change', toggleMode);
+            }
         };
 
         function switchTab(tab) {
@@ -198,9 +205,8 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- MODE TOGGLE (FIXED) ---
+        // --- MODE TOGGLE (FIXED LOGIC) ---
         function toggleMode() {
-            // Get selected mode securely
             const radios = document.getElementsByName('idMode');
             let mode = 'empCode';
             for (let i = 0; i < radios.length; i++) {
@@ -213,9 +219,9 @@
             const mobile = document.getElementById('mobile');
             const empCheck = document.getElementById('empCheck');
             
-            // Reset common fields
+            // Reset logic
             input.value = ""; 
-            if(mode !== 'newJoin') { name.value = ""; desig.value = ""; } // Clear manual values if switching away
+            if(mode !== 'newJoin') { name.value = ""; desig.value = ""; } 
             
             document.getElementById('oracleId').value = "";
             document.getElementById('finalEmpCode').value = "";
@@ -229,14 +235,16 @@
                 input.classList.remove('bg-white');
                 input.classList.add('bg-slate-100', 'cursor-not-allowed');
                 
-                // UNLOCK Name (CRITICAL FIX: Use removeAttribute)
-                name.removeAttribute('readonly'); 
+                // FORCE UNLOCK Name
+                name.readOnly = false; // Important property
+                name.removeAttribute('readonly'); // Important attribute
                 name.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 name.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 name.placeholder = "नाम दर्ज करें (Enter Name) *";
                 
-                // UNLOCK Designation
-                desig.removeAttribute('readonly'); 
+                // FORCE UNLOCK Designation
+                desig.readOnly = false; // Important property
+                desig.removeAttribute('readonly'); // Important attribute
                 desig.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 desig.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 desig.placeholder = "पद दर्ज करें (Enter Designation)";
@@ -249,11 +257,13 @@
                 input.classList.add('bg-white');
                 
                 // LOCK Name
+                name.readOnly = true;
                 name.setAttribute('readonly', true);
                 name.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
                 name.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 
                 // LOCK Designation
+                desig.readOnly = true;
                 desig.setAttribute('readonly', true);
                 desig.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
                 desig.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
