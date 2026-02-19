@@ -25,11 +25,10 @@
             <h1 class="text-xl font-bold">Issue Portal</h1>
             <p class="text-slate-400 text-xs mt-1">Report, Track & Resolve</p>
             
-            <!-- Navigation -->
             <div class="flex space-x-6 mt-4 text-sm">
                 <button onclick="switchTab('report')" id="tab-report" class="tab-btn active pb-2">Report</button>
                 <button onclick="switchTab('track')" id="tab-track" class="tab-btn pb-2">Track Status</button>
-                <button onclick="switchTab('staff')" id="tab-staff" class="tab-btn pb-2">Staff Login</button>
+                <button onclick="switchTab('staff')" id="tab-staff" class="tab-btn pb-2">Admin Login</button>
             </div>
         </div>
 
@@ -43,20 +42,10 @@
                 <input type="tel" id="mobile" placeholder="Your Mobile Number" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <select id="area" onchange="updateContact()" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"><option value="">Area...</option></select>
-                    <select id="jobType" onchange="updateContact()" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"><option value="">Job Type...</option></select>
+                    <input type="text" id="area" placeholder="Area / Plant" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
+                    <input type="text" id="jobType" placeholder="Job Type" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
                 </div>
-                <select id="category" onchange="updateContact()" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"><option value="">Category...</option></select>
-
-                <!-- Dynamic Contact Display -->
-                <div id="contactDisplay" class="hidden bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center space-x-3">
-                    <div class="bg-blue-200 rounded-full p-2"><i class="fa-solid fa-user-tie text-blue-700"></i></div>
-                    <div>
-                        <p class="text-xs text-blue-600 font-bold uppercase">Assigned To</p>
-                        <p id="contactName" class="text-sm font-bold text-slate-800">--</p>
-                        <p id="contactMobile" class="text-xs text-slate-500">--</p>
-                    </div>
-                </div>
+                <input type="text" id="category" placeholder="Category" class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500">
 
                 <textarea id="description" rows="3" placeholder="Complaint Details..." class="p-3 bg-slate-50 border rounded-lg text-sm w-full outline-blue-500"></textarea>
                 
@@ -82,17 +71,15 @@
                 </div>
             </div>
             <div id="trackResults" class="space-y-3">
-                <!-- Results injected here -->
                 <p class="text-center text-slate-400 text-sm mt-10">Enter details to see history.</p>
             </div>
         </div>
 
-        <!-- VIEW 3: STAFF LOGIN -->
+        <!-- VIEW 3: ADMIN LOGIN & ASSIGNMENT -->
         <div id="view-staff" class="hidden p-6 space-y-4 tab-content">
             <div id="staffLoginForm" class="space-y-4 mt-8">
-                <!-- Clean Login Interface: Only Passcode Input -->
                 <div class="text-center mb-6">
-                     <h3 class="font-bold text-slate-800 text-lg">Staff Login</h3>
+                     <h3 class="font-bold text-slate-800 text-lg">Admin Login</h3>
                 </div>
                 <input type="password" id="staffPasscode" placeholder="Enter Passcode" class="w-full p-3 bg-slate-50 border rounded-lg text-center font-bold tracking-widest outline-blue-500 text-xl">
                 <button onclick="staffLogin()" id="staffLoginBtn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700">Login</button>
@@ -100,7 +87,7 @@
 
             <div id="staffDashboard" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h3 class="font-bold text-slate-800">Assigned Tickets</h3>
+                    <h3 class="font-bold text-slate-800">All Complaints</h3>
                     <button onclick="location.reload()" class="text-xs text-red-500 font-bold">LOGOUT</button>
                 </div>
                 <div id="staffTicketList" class="space-y-3 overflow-y-auto max-h-[400px]">
@@ -124,26 +111,11 @@
 
     <script>
         // 🚀 PASTE YOUR APP SCRIPT URL HERE
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-aCqolBYp4-dsRshFmIJ2KIQgaotBgeXI2FBUmmRYDdcTCRnioxc5PdNY-K3Zcobu/exec"; 
+        const WEB_APP_URL = "12LSE7yAwMWwbaIAX6GC2TWpaMdjKESCHQVeuZCv8HAE"; 
         
-        let settingsMap = [];
         let base64Image = "", fileName = "";
+        let globalStaffList = []; // Stores Responsible Persons list
 
-        // --- INIT ---
-        window.onload = function() {
-            if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
-            fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
-                if(data.status==='success') {
-                    settingsMap = data.settingsMap;
-                    populate(document.getElementById('area'), data.areas);
-                    populate(document.getElementById('jobType'), data.jobs);
-                    populate(document.getElementById('category'), data.categories);
-                }
-            });
-        };
-
-        function populate(sel, arr) { arr.forEach(x => { let o=document.createElement('option'); o.text=x; o.value=x; sel.add(o); }); }
-        
         function switchTab(tab) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'border-b-2', 'border-blue-500', 'text-blue-500'));
@@ -151,32 +123,7 @@
             document.getElementById('tab-'+tab).classList.add('active');
         }
 
-        // --- LOGIC 1: DYNAMIC CONTACT ---
-        function updateContact() {
-            const area = document.getElementById('area').value;
-            const job = document.getElementById('jobType').value;
-            const cat = document.getElementById('category').value;
-            const display = document.getElementById('contactDisplay');
-
-            if(area && job) {
-                // Find exact match
-                let match = settingsMap.find(r => r.area == area && r.job == job && r.category == cat);
-                // Fallback: match area & job only
-                if(!match) match = settingsMap.find(r => r.area == area && r.job == job);
-
-                if(match) {
-                    document.getElementById('contactName').innerText = match.name;
-                    document.getElementById('contactMobile').innerText = match.mobile;
-                    display.classList.remove('hidden');
-                } else {
-                    display.classList.add('hidden');
-                }
-            } else {
-                display.classList.add('hidden');
-            }
-        }
-
-        // --- LOGIC 2: REPORT SUBMIT ---
+        // --- SUBMIT COMPLAINT ---
         document.getElementById('photo').addEventListener('change', function(e) {
             let file = e.target.files[0];
             if(file) {
@@ -206,13 +153,13 @@
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(data) })
             .then(r=>r.json()).then(res => {
                 if(res.result === 'success') {
-                    generateReceipt(res.refId, data, res.followUpName, res.followUpMobile);
+                    generateReceipt(res.refId, data);
                     document.getElementById('successOverlay').classList.remove('hidden');
                 } else { alert("Error: "+res.error); btn.innerText="Submit"; btn.disabled=false; }
             });
         });
 
-        // --- LOGIC 3: TRACK STATUS ---
+        // --- TRACK STATUS ---
         function trackStatus() {
             const q = document.getElementById('trackInput').value;
             if(!q) return alert("Enter Gate Pass or Mobile");
@@ -229,38 +176,44 @@
                             <div class="bg-white p-3 rounded shadow border-l-4 ${t.status==='OPEN'?'border-red-500':'border-green-500'}">
                                 <div class="flex justify-between"><span class="text-xs text-slate-400">${new Date(t.date).toLocaleDateString()}</span> <span class="text-xs font-bold ${statusColor}">${t.status}</span></div>
                                 <p class="text-sm font-semibold text-slate-800 mt-1">${t.complaint}</p>
-                                <p class="text-xs text-slate-500 mt-1">Assigned: ${t.followUp}</p>
+                                <p class="text-xs text-slate-500 mt-1">Assigned To: <span class="font-bold">${t.followUp || "Pending"}</span></p>
                             </div>`;
                     });
                 } else { con.innerHTML = '<p class="text-center text-red-400">No records found.</p>'; }
             });
         }
 
-        // --- LOGIC 4: STAFF LOGIN & UPDATE ---
+        // --- ADMIN LOGIN & ASSIGN ---
         function staffLogin() {
             const pass = document.getElementById('staffPasscode').value;
             if(!pass) return alert("Enter Passcode");
             const btn = document.getElementById('staffLoginBtn');
             btn.innerText = "Verifying...";
             
-            // Send passcode instead of mobile
             fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'staffLogin', passcode: pass }) })
             .then(r=>r.json()).then(res => {
                 btn.innerText = "Login";
                 if(res.result==='success') {
+                    globalStaffList = res.staffList; // Save staff list for dropdowns
                     document.getElementById('staffLoginForm').classList.add('hidden');
                     document.getElementById('staffDashboard').classList.remove('hidden');
-                    renderStaffTickets(res.tickets);
+                    renderAdminTickets(res.tickets);
                 } else { alert(res.error); }
             });
         }
 
-        function renderStaffTickets(tickets) {
+        function renderAdminTickets(tickets) {
             const list = document.getElementById('staffTicketList');
             list.innerHTML = "";
-            if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>No assigned tickets.</p>"; return; }
+            if(tickets.length === 0) { list.innerHTML = "<p class='text-center text-slate-400'>No complaints.</p>"; return; }
 
             tickets.forEach(t => {
+                // Create Staff Options HTML
+                let staffOptions = `<option value="Pending Assignment">Unassigned</option>`;
+                globalStaffList.forEach(s => {
+                    staffOptions += `<option value="${s.name}" ${t.assignedTo === s.name ? 'selected' : ''}>${s.name}</option>`;
+                });
+
                 list.innerHTML += `
                     <div class="bg-white p-4 rounded shadow border border-slate-200">
                         <div class="flex justify-between items-start">
@@ -271,29 +224,51 @@
                             </div>
                             ${t.photo !== 'No Photo' ? `<a href="${t.photo}" target="_blank"><i class="fa-solid fa-image text-blue-500"></i></a>` : ''}
                         </div>
-                        <div class="flex gap-2 mt-2">
-                            <select id="status-${t.rowIndex}" class="bg-slate-50 border p-1 text-xs rounded w-full">
-                                <option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option>
-                                <option value="IN PROGRESS" ${t.status==='IN PROGRESS'?'selected':''}>IN PROGRESS</option>
-                                <option value="RESOLVED" ${t.status==='RESOLVED'?'selected':''}>RESOLVED</option>
-                            </select>
-                            <button onclick="updateStatus(${t.rowIndex})" class="bg-slate-800 text-white px-3 py-1 text-xs rounded">Update</button>
+                        
+                        <div class="space-y-2 mt-2 pt-2 border-t">
+                             <!-- ASSIGN DROPDOWN -->
+                             <div>
+                                <label class="text-xs font-bold text-slate-400 uppercase">Assign To</label>
+                                <select id="assign-${t.rowIndex}" class="bg-blue-50 border border-blue-200 p-1 text-xs rounded w-full font-bold text-blue-900">
+                                    ${staffOptions}
+                                </select>
+                             </div>
+
+                             <!-- STATUS DROPDOWN & UPDATE -->
+                             <div class="flex gap-2">
+                                <select id="status-${t.rowIndex}" class="bg-slate-50 border p-1 text-xs rounded w-full">
+                                    <option value="OPEN" ${t.status==='OPEN'?'selected':''}>OPEN</option>
+                                    <option value="IN PROGRESS" ${t.status==='IN PROGRESS'?'selected':''}>IN PROGRESS</option>
+                                    <option value="RESOLVED" ${t.status==='RESOLVED'?'selected':''}>RESOLVED</option>
+                                </select>
+                                <button onclick="updateStatus(${t.rowIndex})" class="bg-slate-800 text-white px-3 py-1 text-xs rounded hover:bg-black">Update</button>
+                             </div>
                         </div>
                     </div>`;
             });
         }
 
         function updateStatus(rowIndex) {
+            const newPerson = document.getElementById(`assign-${rowIndex}`).value;
             const newStat = document.getElementById(`status-${rowIndex}`).value;
-            fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify({ action: 'updateStatus', rowIndex: rowIndex, newStatus: newStat }) })
+            
+            fetch(WEB_APP_URL, { 
+                method: "POST", 
+                body: JSON.stringify({ 
+                    action: 'updateStatus', 
+                    rowIndex: rowIndex, 
+                    newStatus: newStat,
+                    newPerson: newPerson
+                }) 
+            })
             .then(r=>r.json()).then(res => {
-                if(res.result==='success') alert("Status Updated!");
+                if(res.result==='success') alert("Updated Successfully!");
                 else alert("Failed");
             });
         }
 
-        // --- RECEIPT GENERATION ---
-        function generateReceipt(refId, formData, fName, fMobile) {
+        // --- RECEIPT ---
+        function generateReceipt(refId, formData) {
             const canvas = document.getElementById('receiptCanvas');
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 600, 900);
@@ -303,11 +278,10 @@
             ctx.fillStyle = "#333"; ctx.font = "bold 18px Arial"; 
             ctx.fillText("TICKET: "+refId, 30, 140); ctx.fillText("DATE: "+new Date().toLocaleDateString(), 400, 140);
 
-            // Contact Block
+            // Since assignment happens LATER, we show "Pending" on the initial receipt
             ctx.fillStyle = "#eff6ff"; ctx.fillRect(30, 170, 540, 80);
-            ctx.fillStyle = "#1e40af"; ctx.font = "bold 14px Arial"; ctx.fillText("ASSIGNED CONTACT", 50, 200);
-            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText(fName, 50, 230);
-            ctx.fillStyle = "#dc2626"; ctx.font = "18px Arial"; ctx.fillText(fMobile, 350, 230);
+            ctx.fillStyle = "#1e40af"; ctx.font = "bold 14px Arial"; ctx.fillText("STATUS", 50, 200);
+            ctx.fillStyle = "#000"; ctx.font = "bold 20px Arial"; ctx.fillText("OPEN - Pending Assignment", 50, 230);
 
             let y = 300;
             const row = (l, v) => { ctx.fillStyle="#64748b"; ctx.font="bold 16px Arial"; ctx.fillText(l,30,y); ctx.fillStyle="#000"; ctx.fillText(v||"-",200,y); y+=35; };
