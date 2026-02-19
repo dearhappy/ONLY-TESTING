@@ -51,7 +51,7 @@
                         <input type="radio" name="idMode" value="oracle" onchange="toggleMode()"> Oracle ID
                     </label>
                     <label class="flex items-center gap-1 cursor-pointer text-blue-600">
-                        <input type="radio" name="idMode" value="newJoin" onchange="toggleMode()"> Joining Under Process
+                        <input type="radio" name="idMode" value="newJoin" onchange="toggleMode()"> New Joining
                     </label>
                 </div>
 
@@ -184,13 +184,12 @@
         let mediaRecorder; let audioChunks = []; let audioBase64 = ""; let isRecording = false;
 
         window.onload = function() {
-            // 1. Activate Buttons Immediately (Fixes issue if URL is missing/wrong)
+            // Activate Buttons Immediately
             const radios = document.getElementsByName('idMode');
             for(let i=0; i<radios.length; i++) {
                 radios[i].addEventListener('change', toggleMode);
             }
 
-            // 2. Fetch Data
             if(!WEB_APP_URL || WEB_APP_URL.includes("YOUR_DEPLOYED")) return;
             fetch(WEB_APP_URL).then(r=>r.json()).then(data => {
                 document.getElementById('initLoader').classList.add('hidden');
@@ -219,7 +218,7 @@
             const mobile = document.getElementById('mobile');
             const empCheck = document.getElementById('empCheck');
             
-            // Reset
+            // Reset common
             input.value = ""; 
             if(mode !== 'newJoin') { name.value = ""; desig.value = ""; } 
             
@@ -235,17 +234,17 @@
                 input.classList.remove('bg-white');
                 input.classList.add('bg-slate-100', 'cursor-not-allowed');
                 
-                // UNLOCK Name
-                name.disabled = false; // Guaranteed unlock
+                // FORCE UNLOCK Name
                 name.readOnly = false;
+                name.disabled = false;
                 name.removeAttribute('readonly');
                 name.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 name.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 name.placeholder = "नाम दर्ज करें (Enter Name) *";
                 
-                // UNLOCK Designation
-                desig.disabled = false; // Guaranteed unlock
+                // FORCE UNLOCK Designation
                 desig.readOnly = false;
+                desig.disabled = false;
                 desig.removeAttribute('readonly');
                 desig.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 desig.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
