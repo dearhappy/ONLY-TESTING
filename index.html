@@ -192,6 +192,11 @@
                 document.getElementById('initLoader').classList.add('hidden');
                 if(data.status==='success') { empList = data.empList; }
             });
+            
+            // Attach radio listeners manually to ensure they bind correctly
+            document.querySelectorAll('input[name="idMode"]').forEach(radio => {
+                radio.addEventListener('change', toggleMode);
+            });
         };
 
         function switchTab(tab) {
@@ -210,31 +215,55 @@
             const empCheck = document.getElementById('empCheck');
             const mobile = document.getElementById('mobile');
             
-            // Reset fields
-            input.value = ""; name.value = ""; desig.value = ""; 
+            // Reset fields but keep manual values if in newJoin mode to avoid annoyance, 
+            // BUT requirement says reset when switching TO other modes usually. 
+            // Let's reset Identity input always.
+            input.value = ""; 
+            if(mode !== 'newJoin') {
+                name.value = ""; 
+                desig.value = "";
+            }
+            
             document.getElementById('oracleId').value = "";
             document.getElementById('finalEmpCode').value = "";
             document.getElementById('finalOracleId').value = "";
             empCheck.classList.add('hidden');
 
             if(mode === 'newJoin') {
-                input.disabled = true; input.placeholder = "लागू नहीं (N/A)";
-                input.classList.add('bg-slate-100');
+                // Disable EmpCode Input
+                input.disabled = true; 
+                input.placeholder = "लागू नहीं (N/A)";
+                input.classList.remove('bg-white');
+                input.classList.add('bg-slate-100', 'cursor-not-allowed');
                 
-                // Unlock Name & Designation
-                name.readOnly = false; name.classList.remove('bg-slate-100', 'cursor-not-allowed'); name.classList.add('bg-white', 'border-blue-100');
+                // Unlock Name - Completely remove readonly styling and gray text
+                name.readOnly = false; 
+                name.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
+                name.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 name.placeholder = "नाम दर्ज करें (Enter Name) *";
                 
-                desig.readOnly = false; desig.classList.remove('bg-slate-100', 'cursor-not-allowed'); desig.classList.add('bg-white', 'border-blue-100');
+                // Unlock Designation
+                desig.readOnly = false; 
+                desig.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
+                desig.classList.add('bg-white', 'border-blue-100', 'text-slate-900');
                 desig.placeholder = "पद दर्ज करें (Enter Designation)";
                 
                 mobile.placeholder = "मोबाइल नंबर (अनिवार्य) *";
             } else {
-                input.disabled = false; input.classList.remove('bg-slate-100');
+                // Enable EmpCode Input
+                input.disabled = false; 
+                input.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                input.classList.add('bg-white');
                 
-                // Lock Name & Designation (Auto-fill only)
-                name.readOnly = true; name.classList.add('bg-slate-100', 'cursor-not-allowed'); name.classList.remove('bg-white');
-                desig.readOnly = true; desig.classList.add('bg-slate-100', 'cursor-not-allowed'); desig.classList.remove('bg-white');
+                // Lock Name (Auto-fill only) - Add back gray styling
+                name.readOnly = true; 
+                name.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
+                name.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
+                
+                // Lock Designation
+                desig.readOnly = true; 
+                desig.classList.remove('bg-white', 'border-blue-100', 'text-slate-900');
+                desig.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500'); 
                 
                 if(mode === 'empCode') {
                     input.placeholder = "Emp Code दर्ज करें";
@@ -246,6 +275,10 @@
                     desig.placeholder = "पद (स्वचालित)";
                 }
                 mobile.placeholder = "मोबाइल नंबर";
+                
+                // Clear manual entries if switching back
+                name.value = "";
+                desig.value = "";
             }
         }
 
